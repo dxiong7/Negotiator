@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      width: 300px;
+      padding: 10px;
+    }
+    .suggestion {
+      margin: 10px 0;
+      padding: 10px;
+      border: 1px solid #ccc;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="status">Waiting for chat...</div>
+  <div id="suggestion" class="suggestion"></div>
+  <div class="controls">
+    <button id="send">Send</button>
+    <button id="edit">Edit</button>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

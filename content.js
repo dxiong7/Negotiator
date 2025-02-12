@@ -8,19 +8,33 @@ class ChatMonitor {
   }
 
   setupMonitor() {
-    // Wait for chat interface to load
     console.log("Setting up chat monitor");
     const observer = new MutationObserver((mutations, obs) => {
-      const chatContainer = document.querySelector('[data-testid="chat-messages-container"]');
-      if (chatContainer) {
-        console.log("Chat container found");
+      // Log all potential chat-related elements for debugging
+      console.log("Searching for chat elements...");
+      
+      // Updated selectors based on the actual HTML structure
+      const chatContainer = document.querySelector('#message-list');
+      const inputField = document.querySelector('textarea[name="utterance-input"]');
+      const sendButton = document.querySelector('span.send.icon-send-outline[role="button"]');
+
+      if (chatContainer && inputField && sendButton) {
+        console.log("Chat elements found:", {
+          container: chatContainer,
+          input: inputField,
+          button: sendButton
+        });
         this.chatContainer = chatContainer;
-        this.inputField = document.querySelector('[data-testid="chat-input"]');
-        this.sendButton = document.querySelector('[data-testid="chat-send-button"]');
+        this.inputField = inputField;
+        this.sendButton = sendButton;
         this.startMonitoring();
         obs.disconnect();
       } else {
-        console.log("Chat container not found");
+        console.log("Missing elements:", {
+          container: !chatContainer,
+          input: !inputField,
+          button: !sendButton
+        });
       }
     });
 
@@ -48,7 +62,7 @@ class ChatMonitor {
   checkForNewMessages(nodes) {
     nodes.forEach(node => {
       if (node.nodeType === Node.ELEMENT_NODE) {
-        const message = node.querySelector('[data-testid="agent-message"]');
+        const message = node.querySelector('.message.ai .bubble');
         if (message) {
           this.handleAgentMessage(message.textContent);
         }
@@ -57,6 +71,7 @@ class ChatMonitor {
   }
 
   handleAgentMessage(text) {
+    console.log("Handling agent message: sending agentMessage to chrome runtime", text);
     chrome.runtime.sendMessage({
       type: 'agentMessage',
       text: text

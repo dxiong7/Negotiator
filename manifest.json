@@ -12,14 +12,19 @@
       "https://www.xfinity.com/*"
     ],
     "action": {
-      "default_popup": "popup.html"
+      "default_popup": "public/popup.html"
     },
     "background": {
-      "service_worker": "background.js"
+      "service_worker": "dist/background.js",
+      "type": "module"
     },
     "content_scripts": [{
       "matches": ["https://www.xfinity.com/*"],
-      "js": ["content.js"]
+      "js": ["dist/content.js"]
     }],
-    "options_page": "options.html"
+    "options_page": "public/options.html",
+    "web_accessible_resources": [{
+        "resources": ["dist/utils/*"],
+        "matches": ["<all_urls>"]
+    }]
   }

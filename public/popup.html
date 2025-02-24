@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Xfinity Bill Negotiator</title>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            width: 300px;
+            padding: 10px;
+        }
+        .suggestion {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+        #chatHistory {
+            font-size: 12px;
+            line-height: 1.4;
+            background-color: #f5f5f5;
+        }
+        
+        #chatHistory div:nth-child(odd) {
+            background-color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+    <div id="status">Waiting for chat...</div>
+    <div id="suggestion" class="suggestion"></div>
+    <div class="controls">
+        <button id="send">Send</button>
+        <button id="edit">Edit</button>
+    </div>
+    <script src="../dist/popup.js"></script>
+</body>
+</html> 

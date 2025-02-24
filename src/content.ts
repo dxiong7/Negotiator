@@ -1,4 +1,17 @@
+// Content script functionality
+console.log('Content script initialized');
+
+interface Message {
+  type: string;
+  text: string;
+}
+
 class ChatMonitor {
+  private chatContainer: HTMLElement | null;
+  private inputField: HTMLTextAreaElement | null;
+  private sendButton: HTMLElement | null;
+  private observer: MutationObserver | null;
+
   constructor() {
     this.chatContainer = null;
     this.inputField = null;
@@ -7,16 +20,14 @@ class ChatMonitor {
     this.setupMonitor();
   }
 
-  setupMonitor() {
+  private setupMonitor(): void {
     console.log("Setting up chat monitor");
-    const observer = new MutationObserver((mutations, obs) => {
-      // Log all potential chat-related elements for debugging
+    const observer = new MutationObserver((mutations: MutationRecord[], obs: MutationObserver) => {
       console.log("Searching for chat elements...");
       
-      // Updated selectors based on the actual HTML structure
-      const chatContainer = document.querySelector('#message-list');
-      const inputField = document.querySelector('textarea[name="utterance-input"]');
-      const sendButton = document.querySelector('span.send.icon-send-outline[role="button"]');
+      const chatContainer = document.querySelector('#message-list') as HTMLElement | null;
+      const inputField = document.querySelector('textarea[name="utterance-input"]') as HTMLTextAreaElement | null;
+      const sendButton = document.querySelector('span.send.icon-send-outline[role="button"]') as HTMLElement | null;
 
       if (chatContainer && inputField && sendButton) {
         console.log("Chat elements found:", {
@@ -44,8 +55,8 @@ class ChatMonitor {
     });
   }
 
-  startMonitoring() {
-    this.observer = new MutationObserver((mutations) => {
+  private startMonitoring(): void {
+    this.observer = new MutationObserver((mutations: MutationRecord[]) => {
       for (const mutation of mutations) {
         if (mutation.addedNodes.length) {
           this.checkForNewMessages(mutation.addedNodes);
@@ -53,24 +64,27 @@ class ChatMonitor {
       }
     });
 
-    this.observer.observe(this.chatContainer, {
-      childList: true,
-      subtree: true
-    });
+    if (this.chatContainer) {
+      this.observer.observe(this.chatContainer, {
+        childList: true,
+        subtree: true
+      });
+    }
   }
 
-  checkForNewMessages(nodes) {
-    nodes.forEach(node => {
+  private checkForNewMessages(nodes: NodeList): void {
+    nodes.forEach((node: Node) => {
       if (node.nodeType === Node.ELEMENT_NODE) {
-        const message = node.querySelector('.message.ai .bubble');
+        const element = node as Element;
+        const message = element.querySelector('.message.ai .bubble');
         if (message) {
-          this.handleAgentMessage(message.textContent);
+          this.handleAgentMessage(message.textContent || '');
         }
       }
     });
   }
 
-  handleAgentMessage(text) {
+  private handleAgentMessage(text: string): void {
     console.log("Handling agent message: sending agentMessage to chrome runtime", text);
     chrome.runtime.sendMessage({
       type: 'agentMessage',
@@ -78,7 +92,7 @@ class ChatMonitor {
     });
   }
 
-  async insertMessage(text) {
+  async insertMessage(text: string): Promise<void> {
     if (this.inputField && this.sendButton) {
       // Simulate typing
       const event = new InputEvent('input', { bubbles: true });
@@ -98,8 +112,8 @@ class ChatMonitor {
 const chatMonitor = new ChatMonitor();
 
 // Listen for messages from popup
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message: Message, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) => {
   if (message.type === 'sendMessage') {
     chatMonitor.insertMessage(message.text);
   }
-});
+}); 

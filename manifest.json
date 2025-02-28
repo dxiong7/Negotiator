@@ -2,11 +2,10 @@
     "manifest_version": 3,
     "name": "Xfinity Bill Negotiator",
     "version": "1.0",
-    "description": "AI-assisted Xfinity bill negotiation",
+    "description": "AI-powered bill negotiation assistant",
     "permissions": [
       "storage",
-      "activeTab",
-      "scripting"
+      "activeTab"
     ],
     "host_permissions": [
       "https://www.xfinity.com/*"
@@ -19,7 +18,7 @@
       "type": "module"
     },
     "content_scripts": [{
-      "matches": ["https://www.xfinity.com/*"],
+      "matches": ["*://*.xfinity.com/*"],
       "js": ["dist/content.js"]
     }],
     "options_page": "public/options.html",

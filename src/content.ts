@@ -1,51 +1,48 @@
 // Content script functionality
 console.log('Content script initialized');
 
+import { MessageRole, MessagePosition, RuntimeMessage } from './types';
+import { createMessageId, extractMessageContent } from './utils';
+
 interface Message {
   type: string;
   text: string;
+  role?: string;
+}
+
+interface ChatMessage {
+  role: 'user' | 'agent';
+  content: string;
 }
 
 class ChatMonitor {
-  private chatContainer: HTMLElement | null;
-  private inputField: HTMLTextAreaElement | null;
-  private sendButton: HTMLElement | null;
-  private observer: MutationObserver | null;
+  private messageContainer: HTMLElement | null = null;
+  private messageInput: HTMLTextAreaElement | null = null;
+  private submitButton: HTMLElement | null = null;
+  private processedMessages: Set<string> = new Set();
+  private earliestMessageId: string | null = null;
+  private monitorInterval: number | null = null;
+  private lastKnownMessageCount: number = 0;  // Track message count
 
   constructor() {
-    this.chatContainer = null;
-    this.inputField = null;
-    this.sendButton = null;
-    this.observer = null;
     this.setupMonitor();
   }
 
   private setupMonitor(): void {
     console.log("Setting up chat monitor");
     const observer = new MutationObserver((mutations: MutationRecord[], obs: MutationObserver) => {
-      console.log("Searching for chat elements...");
-      
-      const chatContainer = document.querySelector('#message-list') as HTMLElement | null;
-      const inputField = document.querySelector('textarea[name="utterance-input"]') as HTMLTextAreaElement | null;
-      const sendButton = document.querySelector('span.send.icon-send-outline[role="button"]') as HTMLElement | null;
+      const messageContainer = document.querySelector('#message-list') as HTMLElement | null;
+      const messageInput = document.querySelector('textarea[name="utterance-input"]') as HTMLTextAreaElement | null;
+      const submitButton = document.querySelector('span.send.icon-send-outline[role="button"]') as HTMLElement | null;
 
-      if (chatContainer && inputField && sendButton) {
-        console.log("Chat elements found:", {
-          container: chatContainer,
-          input: inputField,
-          button: sendButton
-        });
-        this.chatContainer = chatContainer;
-        this.inputField = inputField;
-        this.sendButton = sendButton;
-        this.startMonitoring();
+      if (messageContainer && messageInput && submitButton) {
+        console.log("Chat elements found");
+        this.messageContainer = messageContainer;
+        this.messageInput = messageInput;
+        this.submitButton = submitButton;
+        
         obs.disconnect();
-      } else {
-        console.log("Missing elements:", {
-          container: !chatContainer,
-          input: !inputField,
-          button: !sendButton
-        });
+        this.startPolling();
       }
     });
 
@@ -55,55 +52,122 @@ class ChatMonitor {
     });
   }
 
-  private startMonitoring(): void {
-    this.observer = new MutationObserver((mutations: MutationRecord[]) => {
-      for (const mutation of mutations) {
-        if (mutation.addedNodes.length) {
-          this.checkForNewMessages(mutation.addedNodes);
-        }
-      }
-    });
+  private startPolling(): void {
+    if (this.monitorInterval) {
+      clearInterval(this.monitorInterval);
+    }
 
-    if (this.chatContainer) {
-      this.observer.observe(this.chatContainer, {
-        childList: true,
-        subtree: true
-      });
+    this.monitorInterval = window.setInterval(() => {
+      this.checkForNewMessages();
+    }, 5000);
+
+    // Do an initial check immediately
+    this.checkForNewMessages();
+  }
+
+  private checkForNewMessages(): void {
+    console.log("Checking for new messages...");
+    if (!this.messageContainer) return;
+
+    const currMessageElements = Array.from(this.messageContainer.querySelectorAll('.message'));
+    
+    chrome.runtime.sendMessage({ type: 'getMessageCount' }, (response) => {
+        this.processNewMessages(currMessageElements, response.count);
+    });
+  }
+
+  private processNewMessages(messages: Element[], processedCount: number): void {
+    const currentCount = messages.length;
+    
+    if (currentCount <= processedCount) {
+        console.log('No new messages to process; skipping polling');
+        return;
+    }
+
+    console.log(`Found ${currentCount - processedCount} new messages to process`);
+    
+    messages.forEach(messageEl => {
+        if (messageEl instanceof HTMLElement) {
+            this.processMessage(messageEl, messages);
+        }
+    });
+    
+    this.lastKnownMessageCount = currentCount;
+  }
+
+  private processMessage(messageEl: HTMLElement, allMessages: Element[]): void {
+    const content = extractMessageContent(messageEl);
+    if (!content) return;
+
+    const role: MessageRole = messageEl.classList.contains('ai') ? 'agent' : 'user';
+    const messageId = createMessageId(role, content);
+    
+    if (this.processedMessages.has(messageId)) return;
+    
+    const position = this.determineMessagePosition(messageEl, allMessages);
+    this.updateMessageTracking(position, messageId);
+    this.notifyBackground(content, role, position); // send message to background script
+  }
+
+  private notifyBackground(content: string, role: MessageRole, position: MessagePosition): void {
+    chrome.runtime.sendMessage({
+      type: 'chatMessage',
+      text: content,
+      role,
+      position
+    });
+  }
+
+  private determineMessagePosition(messageEl: HTMLElement, allMessages: Element[]): MessagePosition {
+    if (!this.earliestMessageId) {
+        // First time processing any message
+        return 'new';
+    }
+
+    // Get index of current message in the array of all visible messages
+    const currentIndex = allMessages.indexOf(messageEl);
+    
+    // Find index of our first processed message in the same array
+    const firstIndex = allMessages.findIndex(el => 
+      createMessageId(
+            el.classList.contains('ai') ? 'agent' : 'user',
+            el.querySelector('.bubble')?.textContent?.trim() || ''
+        ) === this.earliestMessageId
+    );
+
+    // Both indices are from the same array, so we can compare them
+    // If currentIndex < firstIndex, this message appears earlier in the chat
+    if (currentIndex < firstIndex) {
+        return 'before';
+    }
+
+    return 'new';
+  }
+
+  private updateMessageTracking(position: MessagePosition, messageId: string): void {
+    this.processedMessages.add(messageId);
+
+    if (position === 'before') {
+        this.earliestMessageId = messageId;
     }
   }
 
-  private checkForNewMessages(nodes: NodeList): void {
-    nodes.forEach((node: Node) => {
-      if (node.nodeType === Node.ELEMENT_NODE) {
-        const element = node as Element;
-        const message = element.querySelector('.message.ai .bubble');
-        if (message) {
-          this.handleAgentMessage(message.textContent || '');
-        }
-      }
-    });
-  }
-
-  private handleAgentMessage(text: string): void {
-    console.log("Handling agent message: sending agentMessage to chrome runtime", text);
-    chrome.runtime.sendMessage({
-      type: 'agentMessage',
-      text: text
-    });
-  }
-
   async insertMessage(text: string): Promise<void> {
-    if (this.inputField && this.sendButton) {
-      // Simulate typing
+    if (this.messageInput && this.submitButton) {
       const event = new InputEvent('input', { bubbles: true });
-      this.inputField.value = text;
-      this.inputField.dispatchEvent(event);
+      this.messageInput.value = text;
+      this.messageInput.dispatchEvent(event);
 
-      // Small delay to seem more natural
       await new Promise(resolve => setTimeout(resolve, 500));
+      this.submitButton.click();
+    }
+  }
 
-      // Click send button
-      this.sendButton.click();
+  // Cleanup method to clear interval when needed
+  destroy(): void {
+    if (this.monitorInterval) {
+      clearInterval(this.monitorInterval);
+      this.monitorInterval = null;
     }
   }
 }
@@ -112,8 +176,13 @@ class ChatMonitor {
 const chatMonitor = new ChatMonitor();
 
 // Listen for messages from popup
-chrome.runtime.onMessage.addListener((message: Message, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) => {
+chrome.runtime.onMessage.addListener((message: Message) => {
   if (message.type === 'sendMessage') {
     chatMonitor.insertMessage(message.text);
   }
+});
+
+// Cleanup when the content script is unloaded
+window.addEventListener('unload', () => {
+  chatMonitor.destroy();
 }); 

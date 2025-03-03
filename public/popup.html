@@ -3,213 +3,381 @@
 <head>
     <title>Xfinity Bill Negotiator</title>
     <meta charset="UTF-8">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary: #0061df;
+            --primary-dark: #0052bd;
+            --primary-light: #e6f0ff;
+            --secondary: #2ecc71;
+            --secondary-dark: #27ae60;
+            --accent: #f8f9fa;
+            --success: #d1e7dd;
+            --success-text: #0f5132;
+            --danger: #f8d7da;
+            --danger-text: #842029;
+            --text-primary: #212529;
+            --text-secondary: #495057;
+            --text-muted: #6c757d;
+            --border: #dee2e6;
+            --border-light: #e9ecef;
+            --background: #ffffff;
+            --background-light: #f8f9fa;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.1);
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --transition: all 0.2s ease;
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 32px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
             width: 400px;
-            min-height: 400px;
+            min-height: 500px;
             margin: 0;
-            padding: 16px;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: #f8f9fa;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--background-light);
+            color: var(--text-primary);
+            font-size: 14px;
+            line-height: 1.5;
+            overflow-x: hidden;
         }
 
         .container {
             display: flex;
             flex-direction: column;
             height: 100%;
-            gap: 16px;
+            min-height: 500px;
         }
 
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding-bottom: 12px;
-            border-bottom: 1px solid #e9ecef;
+            padding: var(--spacing-md);
+            background-color: var(--background);
+            border-bottom: 1px solid var(--border-light);
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
 
         .title {
             font-size: 18px;
             font-weight: 600;
-            color: #212529;
+            color: var(--text-primary);
             margin: 0;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .title-icon {
+            color: var(--primary);
         }
 
         .settings-btn {
             background: none;
             border: none;
             cursor: pointer;
-            padding: 8px;
-            color: #6c757d;
-            border-radius: 4px;
+            padding: var(--spacing-sm);
+            color: var(--text-muted);
+            border-radius: var(--radius-sm);
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .settings-btn:hover {
-            background: #e9ecef;
+            background: var(--accent);
+            color: var(--text-primary);
         }
 
-        .chat-history {
+        .tabs {
+            display: flex;
+            background-color: var(--background);
+            border-bottom: 1px solid var(--border-light);
+            position: sticky;
+            top: 56px;
+            z-index: 10;
+        }
+
+        .tab {
+            flex: 1;
+            padding: var(--spacing-md);
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 500;
+            color: var(--text-muted);
+            position: relative;
+        }
+
+        .tab.active {
+            color: var(--primary);
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: var(--primary);
+        }
+
+        .tab:hover:not(.active) {
+            background-color: var(--accent);
+        }
+
+        .tab-content {
+            display: none;
+            padding: var(--spacing-md);
             flex: 1;
             overflow-y: auto;
-            padding: 12px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            max-height: 250px;
         }
 
-        .chat-message {
-            margin-bottom: 12px;
-            padding: 8px 12px;
-            border-radius: 8px;
-            max-width: 85%;
-            line-height: 1.4;
-        }
-
-        .user-message {
-            background: #e3f2fd;
-            margin-left: auto;
-            color: #1565c0;
-        }
-
-        .assistant-message {
-            background: #f5f5f5;
-            margin-right: auto;
-            color: #424242;
-        }
-
-        .name-tag {
-            font-weight: 500;
-            margin-bottom: 4px;
-            font-size: 0.9em;
-            opacity: 0.8;
-        }
-
-        .suggestion-container {
-            background: white;
-            padding: 12px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        .tab-content.active {
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            opacity: 0.5;
-            transition: opacity 0.3s;
         }
 
-        .suggestion-container.has-suggestion {
-            opacity: 1;
-        }
-
-        .status {
-            font-size: 14px;
-            color: #6c757d;
-            text-align: center;
-            padding: 8px;
-            background: #e9ecef;
-            border-radius: 4px;
-        }
-
-        .error {
-            color: #dc3545;
-            background: #f8d7da;
-        }
-
-        .controls {
-            display: flex;
-            gap: 8px;
-            margin-top: 12px;
-        }
-
-        .button {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        #send {
-            background-color: #0d6efd;
-            color: white;
-        }
-
-        #send:hover {
-            background-color: #0b5ed7;
-        }
-
-        #edit {
-            background-color: #e9ecef;
-            color: #495057;
-        }
-
-        #edit:hover {
-            background-color: #dee2e6;
-        }
-
-        .suggestion {
-            margin: 0;
-            padding: 12px;
-            border: 1px solid #dee2e6;
-            border-radius: 6px;
-            background-color: #fff;
-            font-size: 14px;
-            line-height: 1.5;
-            min-height: 20px;
+        .section {
+            margin-bottom: var(--spacing-md);
         }
 
         .section-header {
             font-size: 14px;
             font-weight: 600;
-            color: #495057;
-            margin-bottom: 8px;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-sm);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
-        .section {
+        .chat-history {
+            flex: 1;
+            overflow-y: auto;
+            padding: var(--spacing-md);
+            background: var(--background);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            max-height: 250px;
+            margin-bottom: var(--spacing-md);
+            border: 1px solid var(--border-light);
+        }
+
+        .chat-message {
+            margin-bottom: var(--spacing-md);
+            max-width: 85%;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .user-message {
+            margin-left: auto;
+        }
+
+        .assistant-message {
+            margin-right: auto;
+        }
+
+        .message-bubble {
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            position: relative;
+        }
+
+        .user-message .message-bubble {
+            background: var(--primary);
+            color: white;
+            border-top-right-radius: 2px;
+        }
+
+        .assistant-message .message-bubble {
+            background: var(--background);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            border-top-left-radius: 2px;
+        }
+
+        .name-tag {
+            font-weight: 500;
+            margin-bottom: var(--spacing-xs);
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .message-time {
+            font-size: 10px;
+            margin-top: var(--spacing-xs);
+            text-align: right;
+            opacity: 0.8;
+        }
+
+        .user-message .message-time {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .assistant-message .message-time {
+            color: var(--text-muted);
+        }
+
+        .suggestion-container {
+            background: var(--background);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: var(--spacing-sm);
+            border: 1px solid var(--border-light);
+            transition: var(--transition);
+            opacity: 0.8;
         }
 
-        .status-container {
-            margin-top: 12px;
+        .suggestion-container.has-suggestion {
+            opacity: 1;
+            box-shadow: var(--shadow-md);
+            border-color: var(--primary-light);
+        }
+
+        .status {
+            font-size: 13px;
+            color: var(--text-muted);
+            text-align: center;
+            padding: var(--spacing-sm);
+            background: var(--accent);
+            border-radius: var(--radius-sm);
+            margin-top: var(--spacing-sm);
+        }
+
+        .error {
+            color: var(--danger-text);
+            background: var(--danger);
+        }
+
+        .success {
+            color: var(--success-text);
+            background: var(--success);
+        }
+
+        .button {
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-sm);
+        }
+
+        .button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        #send {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        #send:hover:not(:disabled) {
+            background-color: var(--primary-dark);
+        }
+
+        #edit {
+            background-color: var(--accent);
+            color: var(--text-secondary);
+        }
+
+        #edit:hover:not(:disabled) {
+            background-color: var(--border-light);
+        }
+
+        .suggestion {
+            margin: 0;
+            padding: var(--spacing-md);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background-color: var(--background);
+            font-size: 14px;
+            line-height: 1.5;
+            min-height: 60px;
+            max-height: 120px;
+            overflow-y: auto;
+            transition: var(--transition);
+        }
+
+        .suggestion:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px var(--primary-light);
+        }
+
+        .suggestion[contenteditable="true"] {
+            background-color: var(--primary-light);
         }
 
         #generate {
-            background-color: #2ecc71;
+            background-color: var(--secondary);
             color: white;
             font-size: 15px;
-            padding: 10px 20px;
+            padding: var(--spacing-md);
             width: 100%;
-            margin-bottom: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: var(--spacing-sm);
+            box-shadow: var(--shadow-sm);
             display: flex;
             align-items: center;
             justify-content: center;
             position: relative;
             min-height: 44px;
+            border-radius: var(--radius-sm);
         }
 
-        #generate:hover {
-            background-color: #27ae60;
+        #generate:hover:not(:disabled) {
+            background-color: var(--secondary-dark);
         }
 
         #generate:disabled {
-            background-color: #95a5a6;
+            background-color: var(--text-muted);
             cursor: not-allowed;
-            opacity: 0.7;
         }
 
         .secondary-controls {
             display: flex;
-            gap: 8px;
+            gap: var(--spacing-sm);
         }
 
         .loading-spinner {
             position: absolute;
-            right: 16px;
+            right: var(--spacing-md);
             display: none;
             width: 20px;
             height: 20px;
@@ -223,39 +391,288 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        .competitor-card {
+            background: var(--background);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+            border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+        }
+
+        .competitor-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .competitor-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: var(--spacing-sm);
+            align-items: center;
+        }
+
+        .competitor-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .competitor-price {
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .competitor-details {
+            font-size: 13px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .zip-container {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .zip-input {
+            flex: 1;
+            padding: var(--spacing-sm);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            transition: var(--transition);
+        }
+
+        .zip-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px var(--primary-light);
+        }
+
+        .zip-button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: var(--spacing-sm) var(--spacing-md);
+            cursor: pointer;
+            font-size: 14px;
+            transition: var(--transition);
+        }
+
+        .zip-button:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .tips-list {
+            padding-left: var(--spacing-xl);
+            margin: var(--spacing-sm) 0;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .tips-list li {
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .tips-card {
+            background: var(--primary-light);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+            border: 1px solid var(--primary-light);
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: var(--spacing-xl);
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        .empty-state-icon {
+            font-size: 32px;
+            margin-bottom: var(--spacing-md);
+            color: var(--border);
+        }
+
+        .empty-state-text {
+            font-size: 14px;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .empty-state-subtext {
+            font-size: 12px;
+        }
+
+        /* Icons */
+        .icon {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            stroke-width: 0;
+            stroke: currentColor;
+            fill: currentColor;
+            vertical-align: middle;
+        }
+
+        .icon-sm {
+            width: 16px;
+            height: 16px;
+        }
+
+        .icon-lg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2px 8px;
+            font-size: 12px;
+            font-weight: 500;
+            border-radius: 12px;
+            background-color: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .divider {
+            height: 1px;
+            background-color: var(--border-light);
+            margin: var(--spacing-md) 0;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1 class="title">Xfinity Bill Negotiator</h1>
-            <button id="settings" class="settings-btn">⚙️</button>
+            <h1 class="title">
+                <svg class="icon icon-lg title-icon" viewBox="0 0 24 24">
+                    <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
+                </svg>
+                Xfinity Bill Negotiator
+            </h1>
+            <button id="settings" class="settings-btn">
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+                </svg>
+            </button>
         </div>
         
-        <div class="section">
-            <div class="section-header">Chat History</div>
-            <div id="chatHistory" class="chat-history"></div>
+        <div class="tabs">
+            <div class="tab active" data-tab="chat">
+                <svg class="icon icon-sm" viewBox="0 0 24 24">
+                    <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
+                </svg>
+                Chat
+            </div>
+            <div class="tab" data-tab="rates">
+                <svg class="icon icon-sm" viewBox="0 0 24 24">
+                    <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>
+                </svg>
+                Rates
+            </div>
         </div>
         
-        <div class="section">
-            <div class="section-header">AI Suggestion</div>
-            <div class="suggestion-container">
-                <button id="generate" class="button">
-                    <span>Generate Response</span>
-                    <div class="loading-spinner"></div>
-                </button>
-                <div id="suggestion" class="suggestion" contenteditable="false"></div>
-                <div class="secondary-controls">
-                    <button id="send" class="button" disabled>Send</button>
-                    <button id="edit" class="button" disabled>Edit</button>
+        <div id="chatTab" class="tab-content active">
+            <div class="section">
+                <div class="section-header">
+                    <span>Chat History</span>
+                    <span class="badge" id="messageCount">0</span>
+                </div>
+                <div id="chatHistory" class="chat-history">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">💬</div>
+                        <div class="empty-state-text">No messages yet</div>
+                        <div class="empty-state-subtext">Start chatting with Xfinity support to see messages here</div>
+                    </div>
                 </div>
             </div>
-            <div class="status-container">
-                <div class="section-header">Status</div>
-                <div id="status" class="status">Waiting for messages...</div>
+            
+            <div class="section">
+                <div class="section-header">AI Suggestion</div>
+                <div class="suggestion-container">
+                    <button id="generate" class="button">
+                        <svg class="icon" viewBox="0 0 24 24">
+                            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
+                        </svg>
+                        <span>Generate Response</span>
+                        <div class="loading-spinner"></div>
+                    </button>
+                    <div id="suggestion" class="suggestion" contenteditable="false"></div>
+                    <div class="secondary-controls">
+                        <button id="send" class="button" disabled>
+                            <svg class="icon icon-sm" viewBox="0 0 24 24">
+                                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                            </svg>
+                            Send
+                        </button>
+                        <button id="edit" class="button" disabled>
+                            <svg class="icon icon-sm" viewBox="0 0 24 24">
+                                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                            </svg>
+                            Edit
+                        </button>
+                    </div>
+                </div>
+                <div class="status-container">
+                    <div class="section-header">Status</div>
+                    <div id="status" class="status">Waiting for messages...</div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="ratesTab" class="tab-content">
+            <div class="section">
+                <div class="section-header">Your ZIP Code</div>
+                <div class="zip-container">
+                    <input type="text" id="zipCode" class="zip-input" placeholder="Enter ZIP code" maxlength="5" pattern="\d*">
+                    <button id="updateZip" class="zip-button">
+                        <svg class="icon icon-sm" viewBox="0 0 24 24">
+                            <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                        </svg>
+                        Update
+                    </button>
+                </div>
+                
+                <div class="section-header">Competitor Rates</div>
+                <div id="competitorRates">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📍</div>
+                        <div class="empty-state-text">Enter your ZIP code</div>
+                        <div class="empty-state-subtext">We'll show you competitor rates in your area</div>
+                    </div>
+                </div>
+                
+                <div class="divider"></div>
+                
+                <div class="tips-card">
+                    <div class="section-header">Negotiation Tips</div>
+                    <ul class="tips-list">
+                        <li>Mention how long you've been a loyal customer</li>
+                        <li>Reference specific competitor offers</li>
+                        <li>Ask about current promotions for existing customers</li>
+                        <li>Be polite but firm about your willingness to switch</li>
+                        <li>Request to speak with the retention department</li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
     <script src="../dist/popup.js"></script>
 </body>
-</html> 
+</html>
+

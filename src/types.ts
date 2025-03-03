@@ -26,6 +26,7 @@ export interface ExtensionState {
     currentSuggestion: string | null;
     lastError: string | null;
     chatHistory: ChatMessage[];
+    zipCode: string | null;
 }
 
 export interface AIResponse {

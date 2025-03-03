@@ -15,7 +15,8 @@ export class BackgroundManager {
         this.chatState = {
             currentSuggestion: null,
             lastError: null,
-            chatHistory: []
+            chatHistory: [],
+            zipCode: null
         };
         console.log(`${this.logPrefix} Initialized`);
         this.initializeApiKey();
@@ -23,6 +24,13 @@ export class BackgroundManager {
 
     getState(): ExtensionState {
         return { ...this.chatState };
+    }
+
+    // Save state to storage
+    public saveZipCode(zipCode: string) {
+        this.chatState.zipCode = zipCode;
+        chrome.storage.local.set({ extensionState: this.chatState });
+        console.log(`${this.logPrefix} Zip code saved: ${zipCode}`);
     }
 
     private async initializeApiKey(): Promise<void> {
@@ -150,6 +158,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         case 'generateResponse':
             backgroundManager.generateResponse()
                 .catch(error => console.error('[Background] Error generating response:', error));
+            break;
+        case 'saveZipCode':
+            backgroundManager.saveZipCode(message.zipCode);
             break;
     }
     return true;

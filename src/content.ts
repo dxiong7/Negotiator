@@ -51,27 +51,50 @@ class ChatMonitor {
 
   private checkForNewMessages(): void {
     if (!this.messageContainer) return;
+    
+    // Get all message elements
     const messages = Array.from(this.messageContainer.querySelectorAll('.message'));
-    this.processMessages(messages);
+    
+    // Filter out system messages and process the chat messages
+    const chatMessages = messages.filter(msg => {
+        const classList = msg.classList;
+        return classList.contains('user') || 
+               classList.contains('agent') || 
+               classList.contains('ai');
+    });
+    
+    this.processMessages(chatMessages);
   }
 
   private processMessages(messages: Element[]): void {
     const chatHistory = messages
-      .map(messageEl => {
-        if (!(messageEl instanceof HTMLElement)) return null;
-        const content = extractMessageContent(messageEl);
-        if (!content) return null;
-        
-        return {
-          content,
-          role: messageEl.classList.contains('ai') ? 'agent' : 'user' as MessageRole,
-        };
-      })
-      .filter((msg): msg is NonNullable<typeof msg> => msg !== null);
+        .map(messageEl => {
+            if (!(messageEl instanceof HTMLElement)) return null;
+            
+            // Find the bubble element containing the message text
+            const bubbleEl = messageEl.querySelector('.bubble');
+            if (!bubbleEl?.textContent) return null;
+            
+            // Clean and extract the message content
+            const content = bubbleEl.textContent
+                .replace(/\s+/g, ' ')
+                .trim();
+            
+            // Determine message role
+            let role: MessageRole = 'user';
+            if (messageEl.classList.contains('agent')) {
+                role = 'agent';
+            } else if (messageEl.classList.contains('ai')) {
+                role = 'agent'; // Treat AI messages as agent messages
+            }
+            
+            return { content, role };
+        })
+        .filter((msg): msg is NonNullable<typeof msg> => msg !== null);
 
     chrome.runtime.sendMessage({
-      type: 'updateChatHistory',
-      messages: chatHistory
+        type: 'updateChatHistory',
+        messages: chatHistory
     });
   }
 

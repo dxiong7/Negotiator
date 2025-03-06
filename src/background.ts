@@ -103,14 +103,28 @@ export class BackgroundManager {
         }
     }
 
+    private async isPopupOpen(): Promise<boolean> {
+        try {
+            await chrome.runtime.sendMessage({ type: 'ping' });
+            return true;
+        } catch (error) {
+            return false;
+        }
+    }
+
     private async broadcastChatHistoryUpdate(): Promise<void> {
+        if (!await this.isPopupOpen()) {
+            console.debug(`${this.logPrefix} No popup open, skipping chat history update`);
+            return;
+        }
+
         try {
             await sendRuntimeMessage({
                 type: 'chatHistoryUpdated',
                 payload: this.chatState.chatHistory
             });
         } catch (error) {
-            console.log(`${this.logPrefix} No popup available for chat history update`);
+            console.error(`${this.logPrefix} Error broadcasting update:`, error);
         }
     }
 
@@ -130,6 +144,8 @@ export class BackgroundManager {
     }
 
     async generateResponse(): Promise<void> {
+        if (!await this.isPopupOpen()) return;
+
         try {
             const suggestion = await this.getAIResponse();
             this.chatState.currentSuggestion = suggestion;

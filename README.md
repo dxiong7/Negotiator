@@ -2,6 +2,8 @@
 
 This Chrome extension helps you negotiate for cheaper rates with Xfinity like a pro with AI-powered response suggestions. It monitors your chat conversations in real-time and uses OpenAI's GPT-4o-mini model to generate strategic responses during your chat conversations with Xfinity support. 
 
+![Extension Screenshot](./ai-internet-negotiator-ss1.png)
+
 ## Features
 
 - 🤖 AI-powered response generation

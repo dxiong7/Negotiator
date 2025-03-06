@@ -4,6 +4,10 @@
 import { ExtensionState, ChatMessage, AIResponse } from './types';
 import { handleError, sendRuntimeMessage } from './utils';
 
+const NEGOTIATOR_SYSTEM_PROMPT = `You are an expert negotiator skilled in negotiation tactics and trying to negotiate Xfinity internet/cable services through a chat with a virtual agent. 
+                            Your ultimate goal is to save money on your bill through better rates for existing services. Your messages should be direct and above all firm in seeking better rates. 
+                            Keep responses very concise and natural, the messages should look like they were typed by a human.`;
+
 export class BackgroundManager {
     public logPrefix: string = '[Background]';
     private chatState: ExtensionState;
@@ -58,13 +62,11 @@ export class BackgroundManager {
         max_tokens: number;
     } {
         return {
-            model: "gpt-4o-mini",
+            model: "gpt-4o-mini", 
             messages: [
                 {
                     role: "system",
-                    content: `You are an expert negotiator skilled in negotiation tactics and trying to negotiate an Xfinity internet/cable services through a chat with a virtual agent. 
-                            Your ultimate goal is to save money on your bill through better rates for existing services. Your messages should be direct and above all firm in seeking better rates. 
-                            Keep responses very concise and natural, the messages should look like they were typed by a human.`
+                    content: NEGOTIATOR_SYSTEM_PROMPT
                 },
                 ...this.chatState.chatHistory.map(msg => ({
                     role: msg.role === 'agent' ? 'user' : 'assistant',

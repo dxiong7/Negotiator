@@ -1,7 +1,7 @@
 /// <reference lib="dom" />
 /// <reference lib="webworker" />
 
-import { ExtensionState, ChatMessage, AIResponse } from './types';
+import { ExtensionState, ChatMessage, AIResponse, NegotiationContext } from './types';
 import { handleError, sendRuntimeMessage } from './utils';
 
 const NEGOTIATOR_SYSTEM_PROMPT = `You are an expert negotiator skilled in negotiation tactics and trying to negotiate Xfinity internet/cable services through a chat with a virtual agent. 
@@ -20,10 +20,27 @@ export class BackgroundManager {
             currentSuggestion: null,
             lastError: null,
             chatHistory: [],
-            zipCode: null
+            zipCode: null,
+            negotiationContext: {}
         };
         console.log(`${this.logPrefix} Initialized`);
+        this.loadState();
         this.initializeApiKey();
+    }
+
+    private async loadState(): Promise<void> {
+        try {
+            const result = await chrome.storage.local.get(['extensionState']);
+            if (result.extensionState) {
+                this.chatState = {
+                    ...this.chatState,
+                    ...result.extensionState
+                };
+                console.log(`${this.logPrefix} Loaded state from storage:`, this.chatState);
+            }
+        } catch (error) {
+            console.error(`${this.logPrefix} Error loading state:`, error);
+        }
     }
 
     getState(): ExtensionState {
@@ -61,12 +78,16 @@ export class BackgroundManager {
         temperature: number;
         max_tokens: number;
     } {
+        const contextPrompt = this.buildContextPrompt();
+        const systemPrompt = `${NEGOTIATOR_SYSTEM_PROMPT}\n\n${contextPrompt}`;
+        console.log(`${this.logPrefix} System prompt: ${systemPrompt}`);
+
         return {
-            model: "gpt-4o-mini", 
+            model: "gpt-4o-mini",
             messages: [
                 {
                     role: "system",
-                    content: NEGOTIATOR_SYSTEM_PROMPT
+                    content: systemPrompt
                 },
                 ...this.chatState.chatHistory.map(msg => ({
                     role: msg.role === 'agent' ? 'user' : 'assistant',
@@ -76,6 +97,34 @@ export class BackgroundManager {
             temperature: 0.7,
             max_tokens: 150
         };
+    }
+
+    private buildContextPrompt(): string {
+        const context = this.chatState.negotiationContext;
+        console.log(`${this.logPrefix} Building context prompt with:`, context);
+        if (!context) return '';
+
+        const sections: string[] = [];
+
+        if (context.currentServices) {
+            sections.push(`Current Services: ${context.currentServices}`);
+        }
+        if (context.desiredServices) {
+            sections.push(`Desired Services: ${context.desiredServices}`);
+        }
+        if (context.competitorOffers) {
+            sections.push(`Competitor Offers: ${context.competitorOffers}`);
+        }
+        if (context.serviceIssues) {
+            sections.push(`Service Issues: ${context.serviceIssues}`);
+        }
+        if (context.otherContext) {
+            sections.push(`Additional Context: ${context.otherContext}`);
+        }
+
+        return sections.length > 0 
+            ? `Context for negotiation:\n${sections.join('\n')}`
+            : '';
     }
 
     private async getAIResponse(): Promise<string> {
@@ -160,6 +209,23 @@ export class BackgroundManager {
             await sendRuntimeMessage({ type: 'error', text: errorMessage });
         }
     }
+
+    async updateNegotiationContext(context: NegotiationContext): Promise<void> {
+        this.chatState.negotiationContext = context;
+        console.log(`${this.logPrefix} Updating negotiation context:`, context);
+        await this.saveState();
+        console.log(`${this.logPrefix} Negotiation context saved to storage`);
+    }
+
+    private async saveState(): Promise<void> {
+        try {
+            await chrome.storage.local.set({ extensionState: this.chatState });
+            console.log(`${this.logPrefix} State saved to storage:`, this.chatState);
+        } catch (error) {
+            console.error(`${this.logPrefix} Error saving state:`, error);
+            throw error;
+        }
+    }
 }
 
 export const backgroundManager = new BackgroundManager();
@@ -179,6 +245,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             break;
         case 'saveZipCode':
             backgroundManager.saveZipCode(message.zipCode);
+            break;
+        case 'updateNegotiationContext':
+            backgroundManager.updateNegotiationContext(message.context)
+                .catch(error => console.error('[Background] Error updating negotiation context:', error));
             break;
     }
     return true;

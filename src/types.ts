@@ -22,11 +22,20 @@ export interface RuntimeMessage {
     position?: MessagePosition;
 }
 
+export interface NegotiationContext {
+    currentServices?: string;
+    desiredServices?: string;
+    competitorOffers?: string;
+    serviceIssues?: string;
+    otherContext?: string;
+}
+
 export interface ExtensionState {
     currentSuggestion: string | null;
     lastError: string | null;
     chatHistory: ChatMessage[];
     zipCode: string | null;
+    negotiationContext: NegotiationContext;
 }
 
 export interface AIResponse {

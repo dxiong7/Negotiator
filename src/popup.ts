@@ -1,3 +1,5 @@
+import { NegotiationContext } from './types';
+
 // Basic popup functionality
 document.addEventListener("DOMContentLoaded", () => {
   // DOM Elements
@@ -20,6 +22,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const zipInput = document.getElementById("zipCode") as HTMLInputElement
   const updateZipButton = document.getElementById("updateZip") as HTMLButtonElement
   const competitorRatesDiv = document.getElementById("competitorRates") as HTMLDivElement
+
+  // Context form elements
+  const currentServicesInput = document.getElementById('currentServices') as HTMLTextAreaElement;
+  const desiredServicesInput = document.getElementById('desiredServices') as HTMLTextAreaElement;
+  const competitorOffersInput = document.getElementById('competitorOffers') as HTMLTextAreaElement;
+  const serviceIssuesInput = document.getElementById('serviceIssues') as HTMLTextAreaElement;
+  const otherContextInput = document.getElementById('otherContext') as HTMLTextAreaElement;
+  const saveContextButton = document.getElementById('saveContext') as HTMLButtonElement;
 
   // Add proper types for chat history
   interface ChatMessage {
@@ -97,10 +107,54 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Request full state when popup opens
+  // Function to update context form with state
+  function updateContextForm(context: NegotiationContext | undefined) {
+    if (!context) {
+      console.log('No context provided to updateContextForm');
+      return;
+    }
+    
+    console.log('Updating context form with:', context);
+    
+    // Get fresh references to DOM elements
+    const inputs = {
+      currentServices: document.getElementById('currentServices') as HTMLTextAreaElement,
+      desiredServices: document.getElementById('desiredServices') as HTMLTextAreaElement,
+      competitorOffers: document.getElementById('competitorOffers') as HTMLTextAreaElement,
+      serviceIssues: document.getElementById('serviceIssues') as HTMLTextAreaElement,
+      otherContext: document.getElementById('otherContext') as HTMLTextAreaElement
+    };
+    
+    // Check if all elements exist
+    const missingElements = Object.entries(inputs)
+      .filter(([_, element]) => !element)
+      .map(([id]) => id);
+    
+    if (missingElements.length > 0) {
+      console.error('Missing form elements:', missingElements);
+      return;
+    }
+    
+    // Update values
+    inputs.currentServices.value = context.currentServices || '';
+    inputs.desiredServices.value = context.desiredServices || '';
+    inputs.competitorOffers.value = context.competitorOffers || '';
+    inputs.serviceIssues.value = context.serviceIssues || '';
+    inputs.otherContext.value = context.otherContext || '';
+    
+    console.log('Form values updated successfully');
+  }
+
+  // Request initial state
   chrome.runtime.sendMessage({ type: "getState" }, (state) => {
     console.log("Received state:", state)
     if (state) {
+      // Ensure DOM is ready before updating form
+      setTimeout(() => {
+        console.log("Updating context form with state:", state.negotiationContext);
+        updateContextForm(state.negotiationContext);
+      }, 0);
+      
       updateChatHistory(state.chatHistory)
 
       if (state.currentSuggestion) {
@@ -434,5 +488,34 @@ document.addEventListener("DOMContentLoaded", () => {
       loadCompetitorRates(zipInput.value)
     }
   })
+
+  // Save context handler
+  saveContextButton.addEventListener('click', () => {
+    const context = {
+      currentServices: currentServicesInput.value,
+      desiredServices: desiredServicesInput.value,
+      competitorOffers: competitorOffersInput.value,
+      serviceIssues: serviceIssuesInput.value,
+      otherContext: otherContextInput.value
+    };
+
+    console.log('Saving context:', context);
+
+    chrome.runtime.sendMessage({
+      type: 'updateNegotiationContext',
+      context: context
+    }, () => {
+      console.log('Context saved successfully');
+      statusDiv.textContent = 'Context saved!';
+      statusDiv.classList.remove('error');
+      statusDiv.classList.add('success');
+      
+      // Reset status after 2 seconds
+      setTimeout(() => {
+        statusDiv.textContent = 'Waiting for messages...';
+        statusDiv.classList.remove('success');
+      }, 2000);
+    });
+  });
 })
 

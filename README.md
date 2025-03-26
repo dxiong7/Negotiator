@@ -1,8 +1,8 @@
-# AI Negotiator
+# AI Negotiator for Internet Bill
 
-This Chrome extension helps you negotiate for cheaper rates with Xfinity like a pro with AI-powered response suggestions. It monitors your chat conversations in real-time and uses OpenAI's GPT-4o-mini model to generate strategic responses during your chat conversations with Xfinity support. Inspired by [this tweet from the CEO of DoNotPay](https://x.com/jbrowder1/status/1602353465753309195) (which unfortunately never launched).
+I built this Chrome extension to help me negotiate my Xfinity internet bill with AI-powered responses. The extension works alongside you in a virtual chat with Xfinity support. It processes your conversation in real-time and uses OpenAI's GPT-4o-mini model to generate strategic responses. Inspired by [this tweet from the CEO of DoNotPay](https://x.com/jbrowder1/status/1602353465753309195) (which unfortunately never launched).
 
-[Video demo](https://youtu.be/d3PwmFhY-Hw)
+[Live video demo](https://youtu.be/d3PwmFhY-Hw)
 
 ![Extension Screenshot](./ai-internet-negotiator-ss1.png)
 

@@ -5,7 +5,7 @@ I built this Chrome extension to help me negotiate my Xfinity internet bill with
 [See the video demo here](https://youtu.be/d3PwmFhY-Hw)
 
 
-![Review generated suggestions before sending](./negotiation-clip-2-review.gif)
+![Review generated suggestions before sending](./negotiation-clip-review.gif)
 
 ## Features
 
